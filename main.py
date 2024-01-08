@@ -5,6 +5,8 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 from dataset import get_dataset
+from db.db import DBInstance
+from db.task import update_task, get_task
 from train import train_sdxl
 from upload import upload_sdxl
 from caption import captions
@@ -25,6 +27,7 @@ class AIModel(BaseModel):
 def create_model(model: AIModel):
     # 读取训练集
     get_dataset(model.task_id, model.train_path)
+    update_task(model.task_id, TaskStatus.trainging, "")
 
     # 训练集打标
     # captions(model.task_id)
@@ -54,5 +57,13 @@ class TaskStatus(str, Enum):
 
 
 @app.get("/model/mget")
-def get_models():
-    return {}
+def get_models(task_id: str):
+    task = get_task(task_id)
+    return {
+        "code": 200,
+        "msg": "success",
+        "data": {
+            'task_status': task['state'],
+            'model_list': task['path']
+        }
+    }
